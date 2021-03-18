@@ -1,0 +1,16 @@
+{{- if not .Values.cassandra.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "thehive.fullname" . -}} -local-database
+  labels:
+    {{- include "thehive.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.localDatabaseStorage.pvc.storageClass }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.localDatabaseStorage.pvc.size }}
+{{- end -}}

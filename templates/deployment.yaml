@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "thehive.fullname" . }}
+  labels:
+    {{- include "thehive.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "thehive.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "thehive.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+        {{- if .Values.attachmentStorage.pvc.enabled }}
+        - name: attachment-storage
+          persistentVolumeClaim:
+            claimName: {{ include "thehive.fullname" . -}} -attachments
+        {{- end }}
+        {{- if not .Values.cassandra.enabled }}
+        - name: local-database
+          persistentVolumeClaim:
+            claimName: {{ include "thehive.fullname" . -}} -local-database
+        {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "thehive.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          # there is a sleep 30 to wait for cassandra to come up.
+          # avoid getting killed for not being live.
+          startupProbe:
+            httpGet:
+              path: /api/v1/status
+              port: http
+            timeoutSeconds: 15
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.attachmentStorage.pvc.enabled }}
+            - mountPath: /data/files
+              name: attachment-storage
+            {{- end }}
+            {{- if not .Values.cassandra.enabled }}
+            - mountPath: /data/db
+              name: local-database
+            {{- end }}
+          env:
+            - name: TH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "thehive.playsecretname" . }}
+                  key: secret
+{{/* FIXME add Cortex support */}}
+            - name: TH_NO_CONFIG_CORTEX
+              value: "1"
+            {{- if .Values.cassandra.enabled }}
+{{/* FIXME use less hardcoded names */}}
+            - name: TH_CQL_HOSTNAMES
+              {{/* This makes assumptions about how the Cassandra chart has constructed its fullname */}}
+              value: "{{ .Release.Name -}} -cassandra"
+            - name: CQL_USERNAME
+              value: cassandra
+            - name: CQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name -}} -cassandra
+                  key: cassandra-password
+            {{- end }}
+            
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: thehive
+description: "TheHive: security incident response for the masses. This chart is unofficial."
+type: application
+version: 0.1.0
+appVersion: "4.0.5-1"
+sources:
+  - https://github.com/TheHive-Project/TheHive
+maintainers:
+  - name: "Jared Jennings"
+    email: "jjennings@fastmail.fm"
+icon: http://thehive-project.org/assets/img/logos/thehive.svg
+dependencies:
+  - name: cassandra
+    version: ~7.5.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: cassandra.enabled
