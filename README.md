@@ -19,7 +19,7 @@ cluster with stock Traefik 1.7 and Helm 3.5.2, this does the trick for
 me:
 
 ```
-helm install -n thehive . \
+helm install -n thehive my-thehive . \
              --set attachmentStorage.pvc.storageClass=local-path \
              --set 'ingress.hosts[0].host=hive.k.my.dns.domain' \
              --set 'ingress.hosts[0].paths[0].path=/'
