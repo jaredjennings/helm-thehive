@@ -131,24 +131,28 @@ elasticsearch:
   # caCertSecret is not set.
   caCert: ""
 
+# If the storage class for a persistent volume claim is unset or
+# empty, this storage class will be used.
+storageClass: default
+
 attachmentStorage:
   pvc:
     enabled: true
-    storageClass: default
+    storageClass: ""
     size: 10Gi
 
 # Local database storage is used if Cassandra is not enabled.
 localDatabaseStorage:
   pvc:
     enabled: true
-    storageClass: default
+    storageClass: ""
     size: 10Gi
 
 # Local index storage is used if Elasticsearch is not enabled.
 localIndexStorage:
   pvc:
     enabled: true
-    storageClass: default
+    storageClass: ""
     size: 10Gi
 
 cassandra:

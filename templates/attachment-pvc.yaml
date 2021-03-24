@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "thehive.labels" . | nindent 4 }}
 spec:
-  storageClassName: {{ .Values.attachmentStorage.pvc.storageClass }}
+  storageClassName: {{ default .Values.attachmentStorage.pvc.storageClass .Values.storageClass }}
   accessModes:
     - ReadWriteOnce
   resources:

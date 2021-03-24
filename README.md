@@ -20,10 +20,13 @@ me:
 
 ```
 helm install -n thehive my-thehive . \
-             --set attachmentStorage.pvc.storageClass=local-path \
+             --set storageClass=local-path \
              --set 'ingress.hosts[0].host=hive.k.my.dns.domain' \
              --set 'ingress.hosts[0].paths[0].path=/'
 ```
+
+Defaults are for local index storage, local database storage, and
+attachment storage, all on Kubernetes persistent volumes.
 
 ## Improving it
 
