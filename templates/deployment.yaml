@@ -25,12 +25,28 @@ spec:
         {{- if .Values.attachmentStorage.pvc.enabled }}
         - name: attachment-storage
           persistentVolumeClaim:
-            claimName: {{ include "thehive.fullname" . -}} -attachments
+            claimName: {{ include "thehive.attachmentPVCName" . }}
         {{- end }}
-        {{- if not .Values.cassandra.enabled }}
+        {{- if and (not .Values.cassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
         - name: local-database
           persistentVolumeClaim:
-            claimName: {{ include "thehive.fullname" . -}} -local-database
+            claimName: {{ include "thehive.localDatabasePVCName" . }}
+        {{- end }}
+        {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
+        {{- if .Values.elasticsearch.tls }}
+        - name: es-http-ca
+          secret:
+            secretName: {{ default .Values.caCertSecret (include "thehive.elasticCACertSecretName" .) }}
+            items:
+              - key: tls.crt
+                path: es-http-ca.crt
+        {{- end }}
+        {{- else }}
+        {{- if .Values.localIndexStorage.pvc.enabled }}
+        - name: local-index
+          persistentVolumeClaim:
+            claimName: {{ include "thehive.localIndexPVCName" . }}
+        {{- end }}
         {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -72,9 +88,20 @@ spec:
             - mountPath: /data/files
               name: attachment-storage
             {{- end }}
-            {{- if not .Values.cassandra.enabled }}
+            {{- if and (not .Values.cassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
             - mountPath: /data/db
               name: local-database
+            {{- end }}
+            {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
+            {{- if .Values.elasticsearch.tls }}
+            - name: es-http-ca
+              mountPath: /opt/thehive/es-http-ca
+            {{- end }}
+            {{- else }}
+            {{- if .Values.localIndexStorage.pvc.enabled }}
+            - mountPath: /data/index
+              name: local-index
+            {{- end }}
             {{- end }}
           env:
             - name: TH_SECRET
@@ -82,6 +109,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "thehive.playsecretname" . }}
                   key: secret
+{{/* FIXME add Elasticsearch TLS support to TheHive entrypoint */}}
 {{/* FIXME add Cortex support */}}
             - name: TH_NO_CONFIG_CORTEX
               value: "1"

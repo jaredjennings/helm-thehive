@@ -1,0 +1,19 @@
+{{- if not (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
+{{- if .Values.localIndexStorage.pvc.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "thehive.localIndexPVCName" . }}
+  labels:
+    {{- include "thehive.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.localIndexStorage.pvc.storageClass }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.localIndexStorage.pvc.size }}
+{{- else -}}
+{{- end -}}
+{{- end }}

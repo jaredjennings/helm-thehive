@@ -67,3 +67,13 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "thehive.localIndexPVCName" -}}
+{{ printf "%s-%s" (include "thehive.fullname" .) "local-index" | quote }}
+{{- end }}
+{{- define "thehive.localDatabasePVCName" -}}
+{{ printf "%s-%s" (include "thehive.fullname" .) "local-db" | quote }}
+{{- end }}
+{{- define "thehive.attachmentPVCName" -}}
+{{ printf "%s-%s" (include "thehive.fullname" .) "attachments" | quote }}
+{{- end }}

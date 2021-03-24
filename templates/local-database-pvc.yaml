@@ -1,9 +1,10 @@
 {{- if not .Values.cassandra.enabled -}}
+{{- if .Values.localDatabaseStorage.pvc.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "thehive.fullname" . -}} -local-database
+  name: {{ include "thehive.localDatabasePVCName" . }}
   labels:
     {{- include "thehive.labels" . | nindent 4 }}
 spec:
@@ -13,4 +14,7 @@ spec:
   resources:
     requests:
       storage: {{ .Values.localDatabaseStorage.pvc.size }}
+{{- else -}}
+{{- fail "Local database storage using other than a persistent volume claim is not yet supported by this chart." -}}
 {{- end -}}
+{{- end }}

@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "thehive.fullname" . -}} -attachments
+  name: {{ include "thehive.attachmentPVCName" . }}
   labels:
     {{- include "thehive.labels" . | nindent 4 }}
 spec:

@@ -47,8 +47,7 @@ ingress:
     # kubernetes.io/tls-acme: "true"
   hosts:
     - host: thehive.example.com
-      paths:
-        - foo
+      paths: []
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -79,10 +78,58 @@ tolerations: []
 
 affinity: {}
 
-ignoreMissingECK: false
-
+# Elasticsearch can be used for indexing. To avoid using it, set
+# elasticsearch.eck.enabled to false.
 elasticsearch:
-  version: "7.11.2"
+  # Elasticsearch set up outside this chart using Elastic Cloud on
+  # Kubernetes (ECK)
+  eck:
+    # If true, names of resources (e.g. secrets, services) used will
+    # all be formed using the elasticsearchName below.
+    enabled: true
+    # Specify the name of the Elasticsearch custom resource, which
+    # must have been successfully created before using this chart.
+    name: ""
+  # Elasticsearch set up outside this chart, with less
+  # assumptions. You will need to set more values; read on below.
+  external:
+    enabled: false
+  # If ECK is used, you don't need to mess with the rest of these.
+  # -----------------------------------------------------------------
+  #
+  # Username to use when connecting to Elasticsearch.
+  username: elastic
+  # The name of an opaque secret, whose data is a mapping (dictionary,
+  # object) with the username as key and the password as value. If ECK
+  # is enabled, the default is the secret created by ECK. If ECK is
+  # not enabled, and this is not set, a secret will be created using
+  # the given `password`, below.
+  userSecret: ""
+  # A secret is created and used for Elasticsearch login, with this
+  # password and the username above, if ECK is not enabled and
+  # userSecret is not set.
+  password: ""
+  # Where to reach the Elasticsearch cluster. Probably
+  # "https://something:9200". If ECK is enabled, the default is the
+  # service created by ECK.
+  url: ""
+  # If true, this chart expects to tell Cortex a CA cert to trust when
+  # connecting to Elasticsearch. If ECK is enabled, this has to be set
+  # to true. If ECK is not enabled and this is set to true, you need
+  # to provide a CA certificate using the caCertSecret or caCert
+  # values.
+  tls: true
+  # A CA cert to trust when connecting to Elasticsearch using
+  # HTTPS. The secret should contain a key "tls.crt" whose value is
+  # the PEM-encoded cert. If ECK is enabled, the default is the
+  # appropriate secret created by ECK. If ECK is not enabled, and this
+  # is not set, a secret will be created using the `caCert` value
+  # below.
+  caCertSecret: ""
+  # A secret is created and used for CA cert trusting, using a
+  # PEM-encoded cert from this value, if ECK is not enabled and
+  # caCertSecret is not set.
+  caCert: ""
 
 attachmentStorage:
   pvc:
@@ -93,6 +140,14 @@ attachmentStorage:
 # Local database storage is used if Cassandra is not enabled.
 localDatabaseStorage:
   pvc:
+    enabled: true
+    storageClass: default
+    size: 10Gi
+
+# Local index storage is used if Elasticsearch is not enabled.
+localIndexStorage:
+  pvc:
+    enabled: true
     storageClass: default
     size: 10Gi
 
