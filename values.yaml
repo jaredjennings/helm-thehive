@@ -86,7 +86,7 @@ elasticsearch:
   eck:
     # If true, names of resources (e.g. secrets, services) used will
     # all be formed using the elasticsearchName below.
-    enabled: true
+    enabled: false
     # Specify the name of the Elasticsearch custom resource, which
     # must have been successfully created before using this chart.
     name: ""
