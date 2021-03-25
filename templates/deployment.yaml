@@ -112,12 +112,12 @@ spec:
 {{/* FIXME add Elasticsearch TLS support to TheHive entrypoint */}}
 {{/* FIXME add Elasticsearch authentication support to TheHive entrypoint */}}
             {{- if .Values.cortex.enabled }}
-            - name: CORTEX_URLS
+            - name: TH_CORTEX_URLS
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.cortex.secret }}
                   key: urls
-            - name: CORTEX_KEYS
+            - name: TH_CORTEX_KEYS
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.cortex.secret }}
