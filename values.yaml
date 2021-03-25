@@ -102,13 +102,8 @@ elasticsearch:
   # The name of an opaque secret, whose data is a mapping (dictionary,
   # object) with the username as key and the password as value. If ECK
   # is enabled, the default is the secret created by ECK. If ECK is
-  # not enabled, and this is not set, a secret will be created using
-  # the given `password`, below.
+  # not enabled, this must be set.
   userSecret: ""
-  # A secret is created and used for Elasticsearch login, with this
-  # password and the username above, if ECK is not enabled and
-  # userSecret is not set.
-  password: ""
   # Where to reach the Elasticsearch cluster. Probably
   # "https://something:9200". If ECK is enabled, the default is the
   # service created by ECK.

@@ -110,6 +110,7 @@ spec:
                   name: {{ include "thehive.playsecretname" . }}
                   key: secret
 {{/* FIXME add Elasticsearch TLS support to TheHive entrypoint */}}
+{{/* FIXME add Elasticsearch authentication support to TheHive entrypoint */}}
 {{/* FIXME add Cortex support */}}
             - name: TH_NO_CONFIG_CORTEX
               value: "1"
