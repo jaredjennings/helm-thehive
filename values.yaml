@@ -175,3 +175,14 @@ cassandra:
     # extraSeeds:
       #   - hostname/IP
       #   - hostname/IP
+
+cortex:
+  # If true, connectors to Cortex will be configured using the secret
+  # named below.
+  enabled: false
+  # The name of an opaque secret which must have a key "urls" with a
+  # URL to a Cortex instance, and a key "keys" with an API
+  # key. Neither may contain a comma. If there are multiple Cortex
+  # instances, separate the multiple URLs with a comma, and likewise
+  # respectively with the API keys.
+  secret: ""

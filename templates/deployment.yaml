@@ -111,9 +111,21 @@ spec:
                   key: secret
 {{/* FIXME add Elasticsearch TLS support to TheHive entrypoint */}}
 {{/* FIXME add Elasticsearch authentication support to TheHive entrypoint */}}
-{{/* FIXME add Cortex support */}}
+            {{- if .Values.cortex.enabled }}
+            - name: CORTEX_URLS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cortex.secret }}
+                  key: urls
+            - name: CORTEX_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cortex.secret }}
+                  key: keys
+            {{- else }}
             - name: TH_NO_CONFIG_CORTEX
               value: "1"
+            {{- end }}
             {{- if .Values.cassandra.enabled }}
 {{/* FIXME use less hardcoded names */}}
             - name: TH_CQL_HOSTNAMES
