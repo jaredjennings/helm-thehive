@@ -79,7 +79,8 @@ tolerations: []
 affinity: {}
 
 # Elasticsearch can be used for indexing. To avoid using it, set
-# elasticsearch.eck.enabled to false.
+# elasticsearch.eck.enabled and elasticsearch.external.enabled both to
+# false.
 elasticsearch:
   # Elasticsearch set up outside this chart using Elastic Cloud on
   # Kubernetes (ECK)
@@ -176,13 +177,11 @@ cassandra:
       #   - hostname/IP
       #   - hostname/IP
 
-cortex:
-  # If true, connectors to Cortex will be configured using the secret
-  # named below.
-  enabled: false
-  # The name of an opaque secret which must have a key "urls" with a
-  # URL to a Cortex instance, and a key "keys" with an API
-  # key. Neither may contain a comma. If there are multiple Cortex
-  # instances, separate the multiple URLs with a comma, and likewise
-  # respectively with the API keys.
-  secret: ""
+# Provide extra pieces of TheHive configuration in this map. Keys will
+# be used as filenames; values as the contents of the respective
+# files. An include directive for each file given here will be written
+# in the main configuration file. The file contents will be stored in
+# a secret, so it is OK to put secrets like API keys in here. In
+# particular, connections to Cortex instances should be configured
+# here as extras.
+extraHiveConfigurations: {}

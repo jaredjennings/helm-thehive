@@ -34,12 +34,9 @@ spec:
         {{- end }}
         {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
         {{- if .Values.elasticsearch.tls }}
-        - name: es-http-ca
-          secret:
-            secretName: {{ default .Values.caCertSecret (include "thehive.elasticCACertSecretName" .) }}
-            items:
-              - key: tls.crt
-                path: es-http-ca.crt
+        {{- include "thehive.esCACertVolumes" . | nindent 8 }}
+        - name: es-trust-store
+          emptyDir: {}
         {{- end }}
         {{- else }}
         {{- if .Values.localIndexStorage.pvc.enabled }}
@@ -48,6 +45,16 @@ spec:
             claimName: {{ include "thehive.localIndexPVCName" . }}
         {{- end }}
         {{- end }}
+        - name: config-templates
+          configMap:
+            name: {{ include "thehive.templatesConfigMapName" . }}
+        - name: etc-thehive
+          emptyDir: {}
+        {{- if .Values.extraHiveConfigurations }}
+        - name: etc-thehive-extra
+          secret:
+            secretName: {{ include "thehive.extraconfigsecret" . | quote }}
+        {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -55,6 +62,97 @@ spec:
       serviceAccountName: {{ include "thehive.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        # This templating, done at runtime rather than install time,
+        # is done so that the non-secret parts of the config file can
+        # be more easily seen.
+        - name: config-templates
+          {{- /* Image is hardcoded. FIXME? */}}
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config-templates
+              mountPath: /tmp/templates
+            - name: etc-thehive
+              mountPath: /tmp/thehive
+          # For each @@FOO@@ in the config file set up in the
+          # configmap, there must be a FOO in this env. Values should
+          # be shell-safe, natch.
+          env:
+            - name: PLAY_HTTP_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "thehive.playsecretname" . | quote }}
+                  key: secret
+            {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
+            {{- if .Values.elasticsearch.tls }}
+            # There are no private keys to protect in this trust
+            # store, so its password need not actually secure it.
+            - name: ES_TRUST_STORE_PASSWORD
+              value: changeit
+            {{- end }}
+            - name: ES_USERNAME
+              valueFrom
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.elasticsearch.userSecret | default (include "thehive.elasticUserSecretName" .) | quote }}
+                  key: {{ .Values.elasticsearch.username | quote }}
+            {{- end }}
+            {{- if .Values.cassandra.enabled }}
+            - name: CQL_USERNAME
+              value: notimplementedyet
+            - name: CQL_PASSWORD
+              value: notimplementedyet
+            {{- end }}
+          command:
+            - sh
+            - -c
+            - |
+              cd /tmp/thehive; for x in /tmp/templates/*; do
+                  if echo "$x" | grep ".tmpl\$"; then
+                      out=$$(basename $x | sed "s/.tmpl$//")
+                      cat $x | \
+                         sed "s/@@PLAY_HTTP_SECRET_KEY@@/$PLAY_HTTP_SECRET_KEY/g" | \
+                         {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
+                         {{- if .Values.elasticsearch.tls }}
+                         sed "s/@@ES_TRUST_STORE_PASSWORD@@/$ES_TRUST_STORE_PASSWORD/g" | \
+                         {{- end }}
+                         sed "s/@@ES_USERNAME@@/$ES_USERNAME/g" | \
+                         sed "s/@@ES_PASSWORD@@/$ES_PASSWORD/g" | \
+                         {{- end }}
+                         {{- if .Values.cassandra.enabled }}
+                         sed "s/@@CQL_USERNAME@@/$CQL_USERNAME/g" | \
+                         sed "s/@@CQL_PASSWORD@@/$CQL_PASSWORD/g" | \
+                         {{- end }}
+                      cat > "$out"
+                  else
+                      cp $x $(basename $x)
+                  fi
+                done
+        {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
+        {{- if .Values.elasticsearch.tls }}
+        - name: trust-store
+          {{- /* Image is hardcoded. FIXME? */}}
+          image: openjdk:11
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            {{- include "thehive.esTrustStoreVolumeMount" . | nindent 12 }}
+            {{- include "thehive.esCACertVolumeMounts" . | nindent 12 }}
+          env:
+            - name: ES_TRUST_STORE_PASSWORD
+              value: changeit
+          command:
+            - sh
+            - -c
+            - |
+              keytool -importcert -keystore {{ include "thehive.esTrustStore" . | quote }} \
+                      -file {{ include "thehive.esCACert" . | quote }} \
+                      -alias es-http-ca \
+                      -storepass "$ES_TRUST_STORE_PASSWORD" \
+                      -noprompt
+        {{- end }}
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -84,6 +182,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            - mountPath: /etc/thehive
+              name: etc-thehive
+            {{- if .Values.extraHiveConfigurations }}
+            - mountPath: /etc/thehive/extra
+              name: etc-thehive-extra
+            {{- end }}
             {{- if .Values.attachmentStorage.pvc.enabled }}
             - mountPath: /data/files
               name: attachment-storage
@@ -104,42 +208,8 @@ spec:
             {{- end }}
             {{- end }}
           env:
-            - name: TH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "thehive.playsecretname" . }}
-                  key: secret
-{{/* FIXME add Elasticsearch TLS support to TheHive entrypoint */}}
-{{/* FIXME add Elasticsearch authentication support to TheHive entrypoint */}}
-            {{- if .Values.cortex.enabled }}
-            - name: TH_CORTEX_URLS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cortex.secret }}
-                  key: urls
-            - name: TH_CORTEX_KEYS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cortex.secret }}
-                  key: keys
-            {{- else }}
-            - name: TH_NO_CONFIG_CORTEX
+            - name: TH_NO_CONFIG
               value: "1"
-            {{- end }}
-            {{- if .Values.cassandra.enabled }}
-{{/* FIXME use less hardcoded names */}}
-            - name: TH_CQL_HOSTNAMES
-              {{/* This makes assumptions about how the Cassandra chart has constructed its fullname */}}
-              value: "{{ .Release.Name -}} -cassandra"
-            - name: CQL_USERNAME
-              value: cassandra
-            - name: CQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name -}} -cassandra
-                  key: cassandra-password
-            {{- end }}
-            
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

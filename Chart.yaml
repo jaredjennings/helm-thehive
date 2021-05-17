@@ -2,8 +2,8 @@ apiVersion: v2
 name: thehive
 description: "TheHive: security incident response for the masses. This chart is unofficial."
 type: application
-version: 0.2.0
-appVersion: "4.1.1-2"
+version: 0.3.0
+appVersion: "4.1.4-1"
 # This is for the networking.k8s.io/v1 API used by the Ingress. see #10
 kubeVersion: '>=1.19.0'
 sources:

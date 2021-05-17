@@ -31,6 +31,13 @@ Name the Play framework secret.
 {{- end }}
 
 {{/*
+Name the extra config secret
+*/}}
+{{- define "thehive.extraconfigsecret" -}}
+{{ include "thehive.fullname" . -}} -extra-config
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "thehive.chart" -}}
@@ -76,4 +83,8 @@ Create the name of the service account to use
 {{- end }}
 {{- define "thehive.attachmentPVCName" -}}
 {{ printf "%s-%s" (include "thehive.fullname" .) "attachments" | quote }}
+{{- end }}
+
+{{- define "thehive.templatesConfigMapName" -}}
+{{ printf "%s-etc-th-tmpl" (include "thehive.fullname" .) }}
 {{- end }}

@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "thehive.templatesConfigMapName" . | quote }}
+data:
+  {{/*
+  We will fill in secret values by replacing @@strings@@ with sed in an InitContainer.
+  We will construct the trust store using another InitContainer.
+  */}}
+  # Avoid getting configuration, with secrets, catted out to
+  # logs. That is a dev thing to do, not a prod thing to do.
+  application.conf.tmpl: |
+    include file("/etc/thehive/main.conf")
+  main.conf.tmpl: |
+    play.http.secret.key = "@@PLAY_HTTP_SECRET_KEY@@"
+    db {
+      provider: janusgraph
+      janusgraph {
+        storage {
+          {{- if .Values.cassandra.enabled }}
+            backend: cql
+            # let the Kubernetes Service take care of it
+            hostname: ['cassandra']
+            username: "@@CQL_USERNAME@@"
+            password: "@@CQL_PASSWORD@@"
+            cql {
+              cluster-name: {{ .Values.cassandra.cluster.name }}
+              keyspace: thehive
+            }
+          {{- else if .Values.localDatabaseStorage.pvc.enabled }}
+            backend = berkeleyje
+            directory = "/data/db"
+          {{- else }}
+          {{- fail "In main.conf.tmpl, must have some method of database storage" }}
+          {{- end }}
+        }
+        index {
+          {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
+          {{ fail "In main.conf.tmpl, elasticsearch index config unimplemented by chart" }}
+          {{- else if .Values.localIndexStorage.pvc.enabled }}
+            search {
+              backend = lucene
+              directory = "/data/index"
+            }
+          {{- end }}
+        }
+      }
+    }
+    storage {
+      {{- if .Values.attachmentStorage.pvc.enabled }}
+        provider: localfs
+        localfs.directory: "/data/files"
+      {{- else }}
+      {{- fail "In main.conf.tmpl, must have some method of attachment storage" }}
+      {{- end }}
+    }
+
+    {{- range $k, $v := .Values.extraHiveConfigurations }}
+    include file("/etc/thehive/extra/{{ $k }}")
+    {{- end }}
+  logback.xml.tmpl: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration debug="false">
+        <!-- stdout only, no colors -->
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+            </encoder>
+        </appender>
+        <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="STDOUT"/>
+        </appender>
+        <logger name="play" level="INFO"/>
+        <logger name="application" level="INFO"/>
+        <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
+        <root level="INFO">
+            <appender-ref ref="ASYNCSTDOUT"/>
+        </root>
+    </configuration>
+    
