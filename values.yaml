@@ -185,3 +185,13 @@ cassandra:
 # particular, connections to Cortex instances should be configured
 # here as extras.
 extraHiveConfigurations: {}
+
+# Secrets containing CA certs to trust when TheHive makes outgoing TLS
+# connections. Each Secret named here should contain a key "ca.crt"
+# whose value is the PEM-encoded CA certificate.
+trustRootCertsInSecrets: []
+
+# CA certs to trust when TheHive makes outgoing TLS connections. This
+# chart will create Secrets containing the certs. Each item should be
+# the text of a single PEM-encoded certificate.
+trustRootCerts: []

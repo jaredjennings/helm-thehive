@@ -56,6 +56,7 @@ data:
       {{- end }}
     }
 
+    {{- include "thehive.wsCACertPlayWSConfig" . | nindent 4 }}
     {{- range $k, $v := .Values.extraHiveConfigurations }}
     include file("/etc/thehive/extra/{{ $k }}")
     {{- end }}
@@ -73,6 +74,10 @@ data:
         </appender>
         <logger name="play" level="INFO"/>
         <logger name="application" level="INFO"/>
+        <!-- authentication debugging -->
+        <!-- <logger name="org.thp.scalligraph.auth" level="TRACE"/> -->
+        <!-- <logger name="services.UserSrv" level="TRACE" /> -->
+        <!-- /authentication debugging -->
         <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
         <root level="INFO">
             <appender-ref ref="ASYNCSTDOUT"/>

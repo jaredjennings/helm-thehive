@@ -55,6 +55,7 @@ spec:
           secret:
             secretName: {{ include "thehive.extraconfigsecret" . | quote }}
         {{- end }}
+        {{- include "thehive.wsCACertVolumes" . | nindent 8 }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -207,6 +208,7 @@ spec:
               name: local-index
             {{- end }}
             {{- end }}
+            {{ include "thehive.wsCACertVolumeMounts" . | nindent 12 }}
           env:
             - name: TH_NO_CONFIG
               value: "1"

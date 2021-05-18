@@ -39,3 +39,62 @@ changed if Elasticsearch client certs are ever supported.
 {{- end }}
 
 
+
+{{- define "thehive.wsCACertVolumes" -}}
+{{- range .Values.trustRootCertsInSecrets }}
+{{- $name := printf "tls-ca-s-%s" . }}
+- name: {{ $name | quote }}
+  secret:
+    secretName: {{ . | quote }}
+    items:
+      - key: "ca.crt"
+        path: "ca.crt"
+{{- end }}
+{{- range .Values.trustRootCerts }}
+{{- $shortsum := . | sha256sum | substr 0 10 }}
+{{- $name := printf "tls-ca-%s" $shortsum }}
+- name: {{ $name | quote }}
+  secret:
+    secretName: {{ printf "%s-ca-%s" (include "thehive.fullname" $) $shortsum | quote }}
+    items:
+      - key: "ca.crt"
+        path: "ca.crt"
+{{- end }}
+{{- end }}
+
+
+{{- define "thehive.wsCACertVolumeMounts" -}}
+{{- range .Values.trustRootCertsInSecrets }}
+{{ $name := printf "tls-ca-s-%s" . }}
+- name: {{ $name | quote }}
+  mountPath: {{ printf "/etc/cortex/tls/%s" $name | quote }}
+{{- end }}
+{{- range .Values.trustRootCerts }}
+{{- $shortsum := . | sha256sum | substr 0 10 }}
+{{- $name := printf "tls-ca-%s" $shortsum }}
+- name: {{ $name | quote }}
+  mountPath: {{ printf "/etc/cortex/tls/%s" $name | quote }}
+{{- end }}
+{{- end }}
+
+
+{{- define "thehive.wsCACertFilenamesPlayWSStoreLines" }}
+{{- range .Values.trustRootCertsInSecrets }}
+{{ $name := printf "tls-ca-s-%s" . }}
+{{ printf "{ path: \"/etc/cortex/tls/%s/ca.crt\", type: \"PEM\" }" $name }}
+{{- end }}
+{{- range .Values.trustRootCerts }}
+{{- $shortsum := . | sha256sum | substr 0 10 }}
+{{- $name := printf "tls-ca-%s" $shortsum }}
+{{ printf "{ path: \"/etc/cortex/tls/%s/ca.crt\", type: \"PEM\" }" $name }}
+{{- end }}
+{{- end }}
+
+
+{{- define "thehive.wsCACertPlayWSConfig" -}}
+{{- if (or .Values.trustRootCerts .Values.trustRootCertsInSecrets) }}
+play.ws.ssl.trustManager.stores = [
+{{- include "thehive.wsCACertFilenamesPlayWSStoreLines" . | nindent 2 }}
+]
+{{- end }}
+{{- end }}
