@@ -21,7 +21,7 @@ data:
           {{- if .Values.cassandra.enabled }}
             backend: cql
             # let the Kubernetes Service take care of it
-            hostname: ['cassandra']
+            hostname: [ {{ include "thehive.cassandra.fullname" . | quote }} ]
             username: "@@CQL_USERNAME@@"
             password: "@@CQL_PASSWORD@@"
             cql {
@@ -78,6 +78,7 @@ data:
         <!-- <logger name="org.thp.scalligraph.auth" level="TRACE"/> -->
         <!-- <logger name="services.UserSrv" level="TRACE" /> -->
         <!-- /authentication debugging -->
+        <logger name="org.janusgraph.diskstorage.cql" level="TRACE"/>
         <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
         <root level="INFO">
             <appender-ref ref="ASYNCSTDOUT"/>

@@ -93,7 +93,7 @@ spec:
               value: changeit
             {{- end }}
             - name: ES_USERNAME
-              valueFrom
+              value: {{ .Values.elasticsearch.username | quote }}
             - name: ES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -102,9 +102,12 @@ spec:
             {{- end }}
             {{- if .Values.cassandra.enabled }}
             - name: CQL_USERNAME
-              value: notimplementedyet
+              value: {{ .Values.cassandra.dbUser.user | default "cassandra" | quote }}
             - name: CQL_PASSWORD
-              value: notimplementedyet
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "thehive.cassandra.secretname" . | quote }}
+                  key: "cassandra-password"
             {{- end }}
           command:
             - sh

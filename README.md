@@ -28,6 +28,11 @@ helm install -n thehive my-thehive . \
 Defaults are for local index storage, local database storage, and
 attachment storage, all on Kubernetes persistent volumes.
 
+## Caveats
+
+Upon first installation, TheHive may fail to connect to Cassandra for
+a few minutes. Try waiting it out.
+
 ## Improving it
 
 If this chart doesn't flex in a way you need it to, and there isn't

@@ -24,6 +24,25 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Create the name of Cassandra, because it looks like scoping issues prevent us
+from using its original definition.
+*/}}
+{{- define "thehive.cassandra.fullname" -}}
+{{- if .Values.cassandra.fullnameOverride }}
+{{- .Values.cassandra.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := "cassandra" }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+
+
+{{- define "thehive.cassandra.secretname" -}}
+{{ include "thehive.cassandra.fullname" . }}
+{{- end }}
+
+
+{{/*
 Name the Play framework secret.
 */}}
 {{- define "thehive.playsecretname" -}}
