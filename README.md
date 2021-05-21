@@ -10,13 +10,17 @@ It's early days, but if you want to try it out, clone this repository,
 cd into it, and
 
 ```
-helm install .
+helm install my-thehive .
 ```
 
 You'll need to customize the values.yaml or provide some `--set`
-command line options, of course. On my single-node home k3s 1.20.2
-cluster with stock Traefik 1.7 and Helm 3.5.2, this does the trick for
-me:
+command line options, of course.
+
+
+### Smallest install: local database, index and attachments
+
+On my single-node home k3s 1.20.2 cluster with stock Traefik 1.7 and
+Helm 3.5.2, this does the trick for me:
 
 ```
 helm install -n thehive my-thehive . \
@@ -26,12 +30,68 @@ helm install -n thehive my-thehive . \
 ```
 
 Defaults are for local index storage, local database storage, and
-attachment storage, all on Kubernetes persistent volumes.
+attachment storage, all on Kubernetes persistent volumes with the
+default access modes (`ReadWriteOnce`). The `storageClass` you need to
+use will vary with your Kubernetes distribution and its configuration.
 
-## Caveats
+Now, this kind of install is not the best use of this Helm
+chart. Clearly you cannot scale past a single replica of TheHive
+because of the local storage; but the chart sets up a Kubernetes
+Deployment for TheHive, which expects in the face of any change to
+stand up the new TheHive Pod before taking down the old one. But the
+new one fails to become ready because the old one has files locked. To
+work around this, before changing anything (`helm upgrade` for
+example) or deleting a Pod, you must stand down the one you have:
+
+```
+kubectl scale --replicas=0 deployment my-thehive
+```
+
+### Scalable data: Cassandra and ECK Elasticsearch
+
+This is the same as the above, but storing data in Cassandra and
+indexing using Elasticsearch. Make a `values-as-given.yaml`:
+
+```yaml
+ingress:
+  hosts:
+    - host: h2.k.my.dns.domain
+      paths:
+       - path: /
+storageClass: local-path
+elasticsearch:
+  eck:
+    enabled: true
+    name: my-eck-cluster
+cassandra:
+  enabled: true
+  persistence:
+    storageClass: local-path
+  dbUser:
+    password: "my-super-secure-password"
+```
+
+#### Idempotence
+
+You should specify a value for `cassandra.dbUser.password`. When the
+Cassandra chart sets up Cassandra for the first time, it sets the
+password as directed, defaulting to a random password. The password is
+then saved in a Secret. Now if you `helm upgrade`, say, to change some
+of your values, the Cassandra chart will make a new Secret, but the
+persistent volume(s) where the password was set during initial setup -
+and where the data lives! - won't get deleted. If you specified a
+password, this all works fine; but if you let it default to something
+random, the Secret will now contain a wrong password, and anything
+obtaining the password from that Secret (e.g. TheHive as configured by
+this chart) will fail to access Cassandra. So set the password. You
+should change it periodically, but that task doesn't appear to be
+handled for you by these charts.
+
+#### Caveats
 
 Upon first installation, TheHive may fail to connect to Cassandra for
 a few minutes. Try waiting it out.
+
 
 ## Improving it
 
@@ -90,26 +150,30 @@ specify the storageClass for each independently as needed.
 
 ## Elasticsearch
 
-| Parameter                      | Description                                                          | Default             |
-| ---------                      | -----------                                                          | -------             |
-| elasticsearch.eck.enabled      | Set this to true if you used ECK to set up an Elasticsearch cluster. | false               |
-| elasticsearch.eck.name         | Set to the name of the `Elasticsearch` custom resource.              | nil                 |
-| elasticsearch.external.enabled | Set this to true if you have a non-ECK Elasticsearch server/cluster. | false               |
-| elasticsearch.username         | Username with which to authenticate to Elasticsearch.                | elastic<sup>1,2</sup> |
-| elasticsearch.userSecret       | Secret containing the password for the named user.                   | nil<sup>1</sup>     |
-| elasticsearch.url              | URL to Elasticsearch server/cluster.                                 | nil<sup>1</sup>     |
-| elasticsearch.tls              | Set this to true to provide a CA cert to trust.                      | true<sup>1</sup>    |
-| elasticsearch.caCertSecret     | Secret containing the CA certificate to trust.                       | nil<sup>1,3</sup>     |
-| elasticsearch.caCert           | PEM text of the CA cert to trust.                                    | nil<sup>1,3</sup>   |
+| Parameter                            | Description                                                            | Default                |
+| ---------                            | -----------                                                            | -------                |
+| elasticsearch.eck.enabled            | Set this to true if you used ECK to set up an Elasticsearch cluster.   | false                  |
+| elasticsearch.eck.name               | Set to the name of the `Elasticsearch` custom resource.                | nil                    |
+| elasticsearch.external.enabled       | Set this to true if you have a non-ECK Elasticsearch server/cluster.   | false                  |
+| elasticsearch.username               | Username with which to authenticate to Elasticsearch.                  | elastic<sup>1,2</sup>  |
+| elasticsearch.userSecret             | Secret containing the password for the named user.                     | nil<sup>1</sup>        |
+| elasticsearch.url                    | URL to Elasticsearch server/cluster.                                   | nil<sup>1</sup>        |
+| elasticsearch.tls                    | Set this to true to provide a CA cert to trust.                        | true<sup>1</sup>       |
+| elasticsearch.caCertSecret           | Secret containing the CA certificate to trust.                         | nil<sup>1,3</sup>      |
+| elasticsearch.caCertSecretMappingKey | Name of the key in the caCertSecret whose value is the CA certificate. | "ca.crt"<sup>1,3</sup> |
+| elasticsearch.caCert                 | PEM text of the CA cert to trust.                                      | nil<sup>1,3</sup>      |
 
 Notes:
 
-1. If you use ECK to set up an Elasticsearch cluster, you don't need to specify this.
-2. The user secret should be an opaque secret, with data whose key is the username and value is the password.
-3. The CA cert secret should be an opaque secret with data whose key
-   is 'tls.crt' and value is the PEM-encoded certificate. If you don't
-   have such a secret already, provide the PEM-encoded certificate as
-   the value of `elasticsearch.caCert` and the secret will be
+1. If you use ECK to set up an Elasticsearch cluster, you don't need
+   to specify this.
+2. The user secret should be an opaque secret, with data whose key is
+   the username and value is the password.
+3. The `caCertSecret` should be an opaque secret with a key named by
+   `caCertSecretMappingKey` whose value is the PEM-encoded
+   certificate. It could have other keys and values. If you don't have
+   such a secret already, you can provide the PEM-encoded certificate
+   itself as the `elasticsearch.caCert` value, and the secret will be
    constructed for you.
 
 

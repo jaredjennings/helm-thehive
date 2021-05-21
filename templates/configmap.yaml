@@ -37,7 +37,33 @@ data:
         }
         index {
           {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
-          {{ fail "In main.conf.tmpl, elasticsearch index config unimplemented by chart" }}
+            search {
+              backend: elasticsearch
+              hostname: [ {{ include "thehive.elasticHostname" . | quote }} ]
+              index-name: thehive
+              elasticsearch {
+                http {
+                  auth {
+                    type: basic
+                    basic {
+                      username: "@@ES_USERNAME@@"
+                      password: "@@ES_PASSWORD@@"
+                    }
+                  }
+                }
+                {{- if .Values.elasticsearch.tls }}
+                ssl {
+                  enabled: true
+                  truststore {
+                    location: {{ include "thehive.esTrustStore" . | quote }}
+                    # There are no private keys to protect in this trust
+                    # store, so its password need not actually secure it.
+                    password: changeit
+                  }
+                }
+                {{- end }}
+              }
+            }
           {{- else if .Values.localIndexStorage.pvc.enabled }}
             search {
               backend = lucene

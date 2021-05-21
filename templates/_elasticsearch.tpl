@@ -1,7 +1,7 @@
 {{- define "thehive.elasticUserSecretName" -}}
   {{- if .Values.elasticsearch.eck.enabled -}}
     {{- if .Values.elasticsearch.eck.name -}}
-      {{ printf "%s-%s" .Values.elasticsearch.eck.name "es-elastic-user" | quote }}
+      {{ printf "%s-%s" .Values.elasticsearch.eck.name "es-elastic-user" }}
     {{- else -}}
       {{ fail "While trying to construct user secret name: when elasticsearch.eck.enabled is true, you must provide elasticsearch.eck.name." }}
     {{- end -}}
@@ -16,23 +16,26 @@
   {{- end -}}
 {{- end }}
 
-{{- define "thehive.elasticURL" -}}
+
+{{- define "thehive.elasticHostname" -}}
 {{- if .Values.elasticsearch.eck.enabled -}}
-{{ printf "https://%s-es-http:9200" .Values.elasticsearch.eck.name | quote }}
-{{- else -}}{{- /* guess */ -}}
-"https://elasticsearch:9200"
+{{ printf "%s-es-http" .Values.elasticsearch.eck.name }}
+{{- else -}}
+{{ .Values.elasticsearch.hostname | default "elasticsearch" }}
 {{- end -}}
 {{- end }}
+
 
 {{- define "thehive.elasticCACertSecretName" -}}
 {{- if .Values.elasticsearch.eck.enabled -}}
 {{- if .Values.elasticsearch.eck.name -}}
-{{ printf "%s-%s" (.Values.elasticsearch.eck.name) "es-http-ca-internal" | quote }}
+{{ printf "%s-%s" (.Values.elasticsearch.eck.name) "es-http-certs-public" }}
 {{- else -}}
 {{ fail "CA cert secret: when ECK is enabled you must supply a value for elasticsearch.eck.name." }}
 {{- end -}}
 {{- else if .Values.elasticsearch.external.enabled -}}
 {{ printf "%s-%s" (include "thehive.fullname" .) "external-es-http-ca" | quote }}
-{{- else -}}{{- /* with TheHive it is ok to not use Elasticsearch */ -}}
+{{- else -}}
+{{ fail "Elastic CA cert summoned, but Elastic support is not enabled??" }}
 {{- end -}}
 {{- end }}

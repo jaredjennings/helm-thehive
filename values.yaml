@@ -105,23 +105,32 @@ elasticsearch:
   # is enabled, the default is the secret created by ECK. If ECK is
   # not enabled, this must be set.
   userSecret: ""
-  # Where to reach the Elasticsearch cluster. Probably
-  # "https://something:9200". If ECK is enabled, the default is the
-  # service created by ECK.
-  url: ""
+  # The name of the Elasticsearch host to connect to. If ECK is
+  # enabled, the ECK service is used. If ECK is not enabled, this must
+  # be set.
+  hostname: ""
   # If true, this chart expects to tell Cortex a CA cert to trust when
   # connecting to Elasticsearch. If ECK is enabled, this has to be set
   # to true. If ECK is not enabled and this is set to true, you need
   # to provide a CA certificate using the caCertSecret or caCert
   # values.
   tls: true
-  # A CA cert to trust when connecting to Elasticsearch using
-  # HTTPS. The secret should contain a key "tls.crt" whose value is
-  # the PEM-encoded cert. If ECK is enabled, the default is the
-  # appropriate secret created by ECK. If ECK is not enabled, and this
-  # is not set, a secret will be created using the `caCert` value
-  # below.
+  # The name of a Kubernetes Secret object containing a CA cert to
+  # trust when connecting to Elasticsearch using HTTPS. The secret
+  # should contain a mapping with a key, named by
+  # `caCertSecretMappingKey`, whose value is the PEM-encoded cert. If
+  # ECK is enabled, the default is the appropriate secret created by
+  # ECK. If ECK is not enabled, and this is not set, a Secret will be
+  # created using the `caCert` value below. N.B. despite the
+  # juxtaposition of the words `caCert` and `Secret`, the private key
+  # of the certificate authority is far from what we are talking about
+  # here.
   caCertSecret: ""
+  # The name of the key inside the caCertSecret, whose value is the
+  # PEM-encoded cert. N.B. despite the juxtaposition of the words
+  # `caCert` and `Secret`, the private key of the certificate
+  # authority is far from what we are talking about here.
+  caCertSecretMappingKey: "ca.crt"
   # A secret is created and used for CA cert trusting, using a
   # PEM-encoded cert from this value, if ECK is not enabled and
   # caCertSecret is not set.

@@ -35,8 +35,7 @@ spec:
         {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
         {{- if .Values.elasticsearch.tls }}
         {{- include "thehive.esCACertVolumes" . | nindent 8 }}
-        - name: es-trust-store
-          emptyDir: {}
+        {{- include "thehive.esTrustStoreVolume" . | nindent 8 }}
         {{- end }}
         {{- else }}
         {{- if .Values.localIndexStorage.pvc.enabled }}
@@ -150,7 +149,8 @@ spec:
             - sh
             - -c
             - |
-              keytool -importcert -keystore {{ include "thehive.esTrustStore" . | quote }} \
+              keytool -importcert \
+                      -keystore {{ include "thehive.esTrustStore" . | quote }} \
                       -file {{ include "thehive.esCACert" . | quote }} \
                       -alias es-http-ca \
                       -storepass "$ES_TRUST_STORE_PASSWORD" \
@@ -202,8 +202,7 @@ spec:
             {{- end }}
             {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
             {{- if .Values.elasticsearch.tls }}
-            - name: es-http-ca
-              mountPath: /opt/thehive/es-http-ca
+            {{ include "thehive.esTrustStoreVolumeMount" . | nindent 12 }}
             {{- end }}
             {{- else }}
             {{- if .Values.localIndexStorage.pvc.enabled }}
