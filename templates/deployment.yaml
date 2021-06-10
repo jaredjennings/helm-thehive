@@ -22,6 +22,7 @@ spec:
         {{- include "thehive.selectorLabels" . | nindent 8 }}
     spec:
       volumes:
+        {{- if not hasPrefix "3." .Values.image.tag }}
         {{- if .Values.attachmentStorage.pvc.enabled }}
         - name: attachment-storage
           persistentVolumeClaim:
@@ -32,16 +33,19 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "thehive.localDatabasePVCName" . }}
         {{- end }}
+        {{- end }}
         {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
         {{- if .Values.elasticsearch.tls }}
         {{- include "thehive.esCACertVolumes" . | nindent 8 }}
         {{- include "thehive.esTrustStoreVolume" . | nindent 8 }}
         {{- end }}
         {{- else }}
+        {{- if not hasPrefix "3." .Values.image.tag }}
         {{- if .Values.localIndexStorage.pvc.enabled }}
         - name: local-index
           persistentVolumeClaim:
             claimName: {{ include "thehive.localIndexPVCName" . }}
+        {{- end }}
         {{- end }}
         {{- end }}
         - name: config-templates
@@ -99,6 +103,7 @@ spec:
                   name: {{ .Values.elasticsearch.userSecret | default (include "thehive.elasticUserSecretName" .) | quote }}
                   key: {{ .Values.elasticsearch.username | quote }}
             {{- end }}
+            {{- if not hasPrefix "3." .Values.image.tag }}
             {{- if .Values.cassandra.enabled }}
             - name: CQL_USERNAME
               value: {{ .Values.cassandra.dbUser.user | default "cassandra" | quote }}
@@ -107,6 +112,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "thehive.cassandra.secretname" . | quote }}
                   key: "cassandra-password"
+            {{- end }}
             {{- end }}
           command:
             - sh
@@ -124,9 +130,11 @@ spec:
                          sed "s/@@ES_USERNAME@@/$ES_USERNAME/g" | \
                          sed "s/@@ES_PASSWORD@@/$ES_PASSWORD/g" | \
                          {{- end }}
+                         {{- if not hasPrefix "3." .Values.image.tag }}
                          {{- if .Values.cassandra.enabled }}
                          sed "s/@@CQL_USERNAME@@/$CQL_USERNAME/g" | \
                          sed "s/@@CQL_PASSWORD@@/$CQL_PASSWORD/g" | \
+                         {{- end }}
                          {{- end }}
                       cat > "$out"
                   else
@@ -169,17 +177,18 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /api/v1/status
+              path: {{ include "thehive.statusRelativeURL" . | quote }}
               port: http
           readinessProbe:
             httpGet:
               path: /
               port: http
           # there is a sleep 30 to wait for cassandra to come up.
-          # avoid getting killed for not being live.
+          # avoid getting killed for not being live. (for thehive3
+          # this is not true but waiting a bit won't hurt.)
           startupProbe:
             httpGet:
-              path: /api/v1/status
+              path: {{ include "thehive.statusRelativeURL" . | quote }}
               port: http
             timeoutSeconds: 15
             failureThreshold: 5
@@ -192,6 +201,7 @@ spec:
             - mountPath: /etc/thehive/extra
               name: etc-thehive-extra
             {{- end }}
+            {{- if not hasPrefix "3." .Values.image.tag }}
             {{- if .Values.attachmentStorage.pvc.enabled }}
             - mountPath: /data/files
               name: attachment-storage
@@ -200,14 +210,17 @@ spec:
             - mountPath: /data/db
               name: local-database
             {{- end }}
+            {{- end }}
             {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
             {{- if .Values.elasticsearch.tls }}
             {{ include "thehive.esTrustStoreVolumeMount" . | nindent 12 }}
             {{- end }}
             {{- else }}
+            {{- if not hasPrefix "3." .Values.image.tag }}
             {{- if .Values.localIndexStorage.pvc.enabled }}
             - mountPath: /data/index
               name: local-index
+            {{- end }}
             {{- end }}
             {{- end }}
             {{ include "thehive.wsCACertVolumeMounts" . | nindent 12 }}

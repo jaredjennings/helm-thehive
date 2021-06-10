@@ -12,8 +12,53 @@ data:
   # logs. That is a dev thing to do, not a prod thing to do.
   application.conf.tmpl: |
     include file("/etc/thehive/main.conf")
+    include file("/etc/thehive/database.conf")
+  {{/* this main.conf is used for either TheHive 3 or 4 */}}
   main.conf.tmpl: |
     play.http.secret.key = "@@PLAY_HTTP_SECRET_KEY@@"
+    {{- include "thehive.wsCACertPlayWSConfig" . | nindent 4 }}
+    {{- range $k, $v := .Values.extraHiveConfigurations }}
+    include file("/etc/thehive/extra/{{ $k }}")
+    {{- end }}
+
+{{- if hasPrefix "3." .Values.image.tag }}
+  database.conf.tmpl: |
+   {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
+   search {
+     index = the_hive
+     uri = "http{{- if .Values.elasticsearch.tls.enabled -}}s{{- end -}}://{{ include "thehive.elasticHostname" . }}:9200/"
+     keepalive = 1m
+     pagesize = 50
+     nbshards = 5
+     nbreplicas = 1
+     settings {
+       mapping.nested_fields.limit = 100
+     }
+     user = "@@ES_USERNAME@@"
+     password = "@@ES_PASSWORD@@"
+
+     {{- if .Values.elasticsearch.tls }}
+     keyStore {
+       path = {{ include "thehive.esTrustStore" . | quote }}
+       type = "JKS"
+       # There are no private keys to protect in this trust
+       # store, so its password need not actually secure it.
+       password = "changeit"
+     }
+     trustStore {
+       path = {{ include "thehive.esTrustStore" . | quote }}
+       type = "JKS"
+       # There are no private keys to protect in this trust
+       # store, so its password need not actually secure it.
+       password = "changeit"
+     }
+     {{- end }}
+   }
+   {{- else }}
+   {{- fail "You must enable some kind of Elasticsearch for TheHive 3" }}
+   {{- end }}
+{{- else }}{{- /* TheHive 4 database config */ }}
+  database.conf.tmpl: |
     db {
       provider: janusgraph
       janusgraph {
@@ -32,7 +77,7 @@ data:
             backend = berkeleyje
             directory = "/data/db"
           {{- else }}
-          {{- fail "In main.conf.tmpl, must have some method of database storage" }}
+          {{- fail "In database.conf.tmpl, must have some method of database storage" }}
           {{- end }}
         }
         index {
@@ -78,14 +123,10 @@ data:
         provider: localfs
         localfs.directory: "/data/files"
       {{- else }}
-      {{- fail "In main.conf.tmpl, must have some method of attachment storage" }}
+      {{- fail "In database.conf.tmpl, must have some method of attachment storage" }}
       {{- end }}
     }
-
-    {{- include "thehive.wsCACertPlayWSConfig" . | nindent 4 }}
-    {{- range $k, $v := .Values.extraHiveConfigurations }}
-    include file("/etc/thehive/extra/{{ $k }}")
-    {{- end }}
+{{- end }}
   logback.xml.tmpl: |
     <?xml version="1.0" encoding="UTF-8"?>
     <configuration debug="false">
@@ -99,6 +140,17 @@ data:
             <appender-ref ref="STDOUT"/>
         </appender>
         <logger name="play" level="INFO"/>
+{{- if hasPrefix "3." .Values.image.tag }}
+        <!-- Uncomment the next line to log search query sent to ElasticSearch -->
+        <!-- logger name="org.elastic4play.database.DBFind" level="DEBUG" /-->
+
+        <!-- Uncomment the next line to log debug information on Misp synchronization -->
+        <!-- logger name="connectors.misp" level="DEBUG" /-->
+
+        <!-- Uncomment the next lines to log debug information on stream -->
+        <!--logger name="services.LocalStreamActor" level="DEBUG" /-->
+        <!--logger name="services.StreamActor" level="DEBUG" /-->
+{{- else }}{{/* TheHive 4 logging */}}
         <logger name="application" level="INFO"/>
         <!-- authentication debugging -->
         <!-- <logger name="org.thp.scalligraph.auth" level="TRACE"/> -->
@@ -106,6 +158,7 @@ data:
         <!-- /authentication debugging -->
         <logger name="org.janusgraph.diskstorage.cql" level="TRACE"/>
         <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
+{{- end }}
         <root level="INFO">
             <appender-ref ref="ASYNCSTDOUT"/>
         </root>

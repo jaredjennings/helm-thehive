@@ -1,3 +1,4 @@
+{{- if not hasPrefix "3." .Values.image.tag -}}
 {{- if .Values.attachmentStorage.pvc.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -15,4 +16,5 @@ spec:
       storage: {{ .Values.attachmentStorage.pvc.size }}
 {{- else -}}
 {{- fail "Attachment storage using other than a persistent volume claim is not yet supported by this chart." -}}
+{{- end -}}
 {{- end -}}

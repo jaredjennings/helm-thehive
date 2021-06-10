@@ -73,7 +73,9 @@ elasticsearch:
 Now
 
 ```
-helm install -n
+helm install -n mynamespace hivename . -f values-as-given.yaml
+```
+
 #### Idempotence
 
 You should specify a value for `cassandra.dbUser.password`. Otherwise
@@ -88,6 +90,14 @@ it appears the Bitnami Cassandra chart may not handle this for you.
 
 Upon first installation, TheHive may fail to connect to Cassandra for
 a few minutes. Try waiting it out.
+
+## TheHive 3
+
+To deploy TheHive 3, supply `image.repository` value
+`thehiveproject/thehive` and `image.tag` `3.5.1`. Configuration will
+be altered accordingly. At [this point in
+history](https://blog.thehive-project.org/2021/03/19/thehive-reloaded-4-1-0-is-out/),
+i.e. after March 19, 2021, no one should take TheHive 3 to production.
 
 ## Improving it
 

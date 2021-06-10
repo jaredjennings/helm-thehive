@@ -4,6 +4,8 @@
 
 replicaCount: 1
 
+# To deploy TheHive 3, use repository "thehiveproject/thehive" and
+# specify a tag that starts with "3." for example "3.5.1".
 image:
   repository: thehiveproject/thehive4
   pullPolicy: IfNotPresent
@@ -81,6 +83,9 @@ affinity: {}
 # Elasticsearch can be used for indexing. To avoid using it, set
 # elasticsearch.eck.enabled and elasticsearch.external.enabled both to
 # false.
+#
+# For TheHive 3, Elasticsearch is the primary data store. You have to
+# enable it one way or another.
 elasticsearch:
   # Elasticsearch set up outside this chart using Elastic Cloud on
   # Kubernetes (ECK)
@@ -147,6 +152,8 @@ attachmentStorage:
     size: 10Gi
 
 # Local database storage is used if Cassandra is not enabled.
+#
+# This does not matter for TheHive 3.
 localDatabaseStorage:
   pvc:
     enabled: true
@@ -154,12 +161,16 @@ localDatabaseStorage:
     size: 10Gi
 
 # Local index storage is used if Elasticsearch is not enabled.
+#
+# This does not matter for TheHive 3.
 localIndexStorage:
   pvc:
     enabled: true
     storageClass: ""
     size: 10Gi
 
+# Cassandra is the usual primary data store for TheHive 4. All
+# settings here are ignored when deploying TheHive 3.
 cassandra:
   enabled: false
   # Among the many configurable values of the Cassandra chart, this

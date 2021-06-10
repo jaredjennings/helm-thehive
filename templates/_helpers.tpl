@@ -107,3 +107,11 @@ Create the name of the service account to use
 {{- define "thehive.templatesConfigMapName" -}}
 {{ printf "%s-etc-th-tmpl" (include "thehive.fullname" .) }}
 {{- end }}
+
+{{- define "thehive.statusRelativeURL" -}}
+{{- if hasPrefix "3." .Values.image.tag -}}
+/api/v1/status
+{{- else -}}
+/api/status
+{{- end -}}
+{{- end }}

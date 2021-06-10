@@ -106,10 +106,17 @@ changed if Elasticsearch client certs are ever supported.
 {{- end }}
 {{- end }}
 
+{{- define "thehive.wsConfigRoot" -}}
+{{- if hasPrefix "3." .Values.image.tag -}}
+ws
+{{- else -}}
+play.ws
+{{- end -}}
+{{- end -}}
 
 {{- define "thehive.wsCACertPlayWSConfig" -}}
 {{- if (or .Values.trustRootCerts .Values.trustRootCertsInSecrets) }}
-play.ws.ssl.trustManager.stores = [
+{{ include "thehive.wsConfigRoot" }}.ssl.trustManager.stores = [
 {{- include "thehive.wsCACertFilenamesPlayWSStoreLines" . | nindent 2 }}
 ]
 {{- end }}

@@ -1,3 +1,4 @@
+{{- if not hasPrefix "3." .Values.image.tag -}}
 {{- if not .Values.cassandra.enabled -}}
 {{- if .Values.localDatabaseStorage.pvc.enabled -}}
 apiVersion: v1
@@ -16,5 +17,6 @@ spec:
       storage: {{ .Values.localDatabaseStorage.pvc.size }}
 {{- else -}}
 {{- fail "Local database storage using other than a persistent volume claim is not yet supported by this chart." -}}
+{{- end -}}
 {{- end -}}
 {{- end }}
