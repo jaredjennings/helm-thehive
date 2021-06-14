@@ -1,4 +1,4 @@
-{{- if not hasPrefix "3." .Values.image.tag -}}
+{{- if not (hasPrefix "3." .Values.image.tag) -}}
 {{- if .Values.attachmentStorage.pvc.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim

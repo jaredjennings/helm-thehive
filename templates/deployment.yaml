@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+((apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ .Release.Namespace }}
@@ -22,7 +22,7 @@ spec:
         {{- include "thehive.selectorLabels" . | nindent 8 }}
     spec:
       volumes:
-        {{- if not hasPrefix "3." .Values.image.tag }}
+        {{- if not (hasPrefix "3." .Values.image.tag) }}
         {{- if .Values.attachmentStorage.pvc.enabled }}
         - name: attachment-storage
           persistentVolumeClaim:
@@ -40,7 +40,7 @@ spec:
         {{- include "thehive.esTrustStoreVolume" . | nindent 8 }}
         {{- end }}
         {{- else }}
-        {{- if not hasPrefix "3." .Values.image.tag }}
+        {{- if not (hasPrefix "3." .Values.image.tag) }}
         {{- if .Values.localIndexStorage.pvc.enabled }}
         - name: local-index
           persistentVolumeClaim:
@@ -103,7 +103,7 @@ spec:
                   name: {{ .Values.elasticsearch.userSecret | default (include "thehive.elasticUserSecretName" .) | quote }}
                   key: {{ .Values.elasticsearch.username | quote }}
             {{- end }}
-            {{- if not hasPrefix "3." .Values.image.tag }}
+            {{- if not (hasPrefix "3." .Values.image.tag) }}
             {{- if .Values.cassandra.enabled }}
             - name: CQL_USERNAME
               value: {{ .Values.cassandra.dbUser.user | default "cassandra" | quote }}
@@ -130,7 +130,7 @@ spec:
                          sed "s/@@ES_USERNAME@@/$ES_USERNAME/g" | \
                          sed "s/@@ES_PASSWORD@@/$ES_PASSWORD/g" | \
                          {{- end }}
-                         {{- if not hasPrefix "3." .Values.image.tag }}
+                         {{- if not (hasPrefix "3." .Values.image.tag) }}
                          {{- if .Values.cassandra.enabled }}
                          sed "s/@@CQL_USERNAME@@/$CQL_USERNAME/g" | \
                          sed "s/@@CQL_PASSWORD@@/$CQL_PASSWORD/g" | \
@@ -201,7 +201,7 @@ spec:
             - mountPath: /etc/thehive/extra
               name: etc-thehive-extra
             {{- end }}
-            {{- if not hasPrefix "3." .Values.image.tag }}
+            {{- if not (hasPrefix "3." .Values.image.tag) }}
             {{- if .Values.attachmentStorage.pvc.enabled }}
             - mountPath: /data/files
               name: attachment-storage
@@ -216,7 +216,7 @@ spec:
             {{ include "thehive.esTrustStoreVolumeMount" . | nindent 12 }}
             {{- end }}
             {{- else }}
-            {{- if not hasPrefix "3." .Values.image.tag }}
+            {{- if not (hasPrefix "3." .Values.image.tag) }}
             {{- if .Values.localIndexStorage.pvc.enabled }}
             - mountPath: /data/index
               name: local-index
@@ -239,3 +239,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+))

@@ -57,7 +57,7 @@ data:
    {{- else }}
    {{- fail "You must enable some kind of Elasticsearch for TheHive 3" }}
    {{- end }}
-{{- else }}{{- /* TheHive 4 database config */ }}
+{{- else }}{{- /* TheHive 4 database config */}}
   database.conf.tmpl: |
     db {
       provider: janusgraph
