@@ -26,7 +26,7 @@ data:
    {{- if (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
    search {
      index = the_hive
-     uri = "http{{- if .Values.elasticsearch.tls.enabled -}}s{{- end -}}://{{ include "thehive.elasticHostname" . }}:9200/"
+     uri = "http{{- if .Values.elasticsearch.tls -}}s{{- end -}}://{{ include "thehive.elasticHostname" . }}:9200/"
      keepalive = 1m
      pagesize = 50
      nbshards = 5
