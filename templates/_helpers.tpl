@@ -110,8 +110,8 @@ Create the name of the service account to use
 
 {{- define "thehive.statusRelativeURL" -}}
 {{- if hasPrefix "3." .Values.image.tag -}}
-/api/v1/status
-{{- else -}}
 /api/status
+{{- else -}}
+/api/v1/status
 {{- end -}}
 {{- end }}
