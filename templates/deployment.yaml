@@ -1,4 +1,4 @@
-((apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ .Release.Namespace }}
@@ -138,7 +138,7 @@ spec:
                          {{- end }}
                       cat > "$out"
                   else
-                      cp $x $(basename $x)
+                      cp $x $$(basename $x)
                   fi
                 done
         {{- if or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled }}
@@ -239,4 +239,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-))
