@@ -1,4 +1,4 @@
-{{- if not hasPrefix "3." .Values.image.tag -}}
+{{- if not (hasPrefix "3." .Values.image.tag) -}}
 {{- if not (or .Values.elasticsearch.eck.enabled .Values.elasticsearch.external.enabled) }}
 {{- if .Values.localIndexStorage.pvc.enabled -}}
 apiVersion: v1
