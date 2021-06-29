@@ -86,6 +86,13 @@ deleted and recreated. When you specify a password, a new one is not
 randomly generated. You should indeed rotate Cassandra passwords, but
 it appears the Bitnami Cassandra chart may not handle this for you.
 
+### External Cassandra database
+
+If you are migrating data into TheHive 4, you may need a Cassandra
+instance which begins its life before your TheHive 4 installation. You
+can supply `externalCassandra` values for this (see below).
+
+
 ## Caveats
 
 Upon first installation, TheHive may fail to connect to Cassandra for
@@ -94,7 +101,7 @@ a few minutes. Try waiting it out.
 ## TheHive 3
 
 To deploy TheHive 3, supply `image.repository` value
-`thehiveproject/thehive` and `image.tag` `3.5.1`. Configuration will
+`thehiveproject/thehive` and `image.tag` `3.5.1-1`. Configuration will
 be altered accordingly. At [this point in
 history](https://blog.thehive-project.org/2021/03/19/thehive-reloaded-4-1-0-is-out/),
 i.e. after March 19, 2021, no one should take TheHive 3 to production.
@@ -111,7 +118,7 @@ over.
 ## The future
 
 I hope that one day this chart and its peers will be part of the
-solution to https://github.com/TheHive-Project/TheHive/issues/1224. 
+solution to https://github.com/TheHive-Project/TheHive/issues/1224.
 
 # Parameters
 
@@ -181,31 +188,83 @@ Notes:
 
 ## Cassandra
 
-Look in the [Cassandra
+Parameters about Cassandra as deployed with a Helm subchart. Look in
+the [Cassandra
 chart](https://artifacthub.io/packages/helm/bitnami/cassandra) for a
 complete list of parameters you can set about the Cassandra
-deployment. At this writing, this chart is built to either deploy
-Cassandra itself, or not use Cassandra at all.
+deployment.
 
 | Parameter                          | Description                                                         | Default |
 | --                                 | --                                                                  | --      |
 | cassandra.enabled                  | Set this to true to store TheHive main data in a Cassandra cluster. | false   |
 | cassandra.persistence.storageClass | PVC Storage Class for Cassandra data volume                         | nil     |
 
+## External Cassandra
 
-## Cortex
+Parameters to connect to an existing database that implements the CQL
+protocol.
 
-TheHive can connect to one or more Cortex instances.
+| Parameter                              | Description                                                    | Default   |
+| --                                     | --                                                             | --        |
+| externalCassandra.enabled              | Set this to true to connect to an existing Cassandra instance. | false     |
+| externalCassandra.hostName             | Hostname to use when connecting to the database.               |           |
+| externalCassandra.cluster.name         | Name of the Cassandra cluster.                                 | thp       |
+| externalCassandra.dbUser.name          | Username to use when connecting to the database.               | cassandra |
+| externalCassandra.dbUser.forcePassword | Set to true to use a password when connecting.                 | false     |
+| externalCassandra.dbUser.password      | Password to use when connecting. Will be stored in a Secret.   |           |
 
-| Parameter      | Description                                                             | Default         |
-| --             | --                                                                      | --              |
-| cortex.enabled | Set this to true to hook up to some Cortex instances                    | false           |
-| cortex.secret  | A secret with one or more Cortex instance URLs and respective API keys. | nil<sup>1</sup> |
+## Extra TheHive configurations
 
-Notes:
+You can provide extra configuration for TheHive, for example for
+single signon, or to connect to Cortex or MISP instances.
 
-1. The named secret must be an opaque secret with a key "urls" whose
-   value is the URL to one or more Cortex instances. If more than one,
-   commas (but no spaces) separate the URLs. It must also have a key
-   "keys" with one API key per URL, again separated by commas with no
-   spaces.
+Provide extra pieces of TheHive configuration under
+`extraHiveConfigurations`. Keys will be used as filenames; values as
+the contents of the respective files. An include directive for each
+file given here will be written in the main configuration file. The
+file contents will be stored in a secret, so it is OK to put secrets
+like API keys in here.
+
+Example:
+
+```yaml
+extraHiveConfigurations:
+  myConfig1.conf: |
+    some {
+       hive: configuration
+    }
+  myConfig2.conf: |
+    other {
+       configuration = ["stuff"]
+    }
+```
+
+See TheHive documentation about the configuration directives you can
+write.
+
+## CA certs for outgoing web service connections
+
+For OIDC single signon and other web service connections, TheHive
+makes outgoing TLS connections. It needs to trust the certification
+authorities that issued the valid server certs it will see. To provide
+those CA certs, use the `trustRootCertsInSecrets` and `trustRootCerts`
+values.
+
+If you have Kubernetes Secrets with a `ca.crt` value that contains a
+PEM-encoded CA cert, provide the names of the secrets as the
+`trustRootCertsInSecrets` value. If you don't have such Secret
+objects, just provide the PEM-encoded text of the certificates
+themselves as the `trustRootCerts` value.
+
+Example:
+
+```yaml
+trustRootCertsInSecrets:
+  - myCACert1
+
+trustRootCerts:
+  - |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+```

@@ -1,5 +1,5 @@
 {{- if not (hasPrefix "3." .Values.image.tag) -}}
-{{- if not .Values.cassandra.enabled -}}
+{{- if and (not .Values.cassandra.enabled) (not .Values.externalCassandra.enabled) -}}
 {{- if .Values.localDatabaseStorage.pvc.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim

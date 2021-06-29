@@ -41,6 +41,10 @@ from using its original definition.
 {{ include "thehive.cassandra.fullname" . }}
 {{- end }}
 
+{{- define "thehive.externalCassandra.secretname" -}}
+{{- printf "%s-extcass-%s" .Release.Name .Values.externalCassandra.cluster.name | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
 
 {{/*
 Name the Play framework secret.

@@ -169,16 +169,21 @@ localIndexStorage:
     storageClass: ""
     size: 10Gi
 
-# Cassandra is the usual primary data store for TheHive 4. All
-# settings here are ignored when deploying TheHive 3.
+# Cassandra is the usual primary data store for TheHive 4. Settings in
+# this section are for the Cassandra Helm chart. For external
+# Cassandra databases, set cassandra.enabled to false, and see
+# externalCassandra below.
+#
+# All settings here are ignored when deploying TheHive 3.
 cassandra:
   enabled: false
   # Among the many configurable values of the Cassandra chart, this
   # was the first I needed to change.
   persistence:
     storageClass: default
-  # thehive docker entrypoint assumes this cluster name
   cluster:
+    # thehive docker entrypoint assumes this cluster name; we have no
+    # reason to be different by default.
     name: thp
     # remainder is defaults from cassandra values
     seedCount: 1
@@ -196,6 +201,26 @@ cassandra:
     # extraSeeds:
       #   - hostname/IP
       #   - hostname/IP
+
+# Setup for an external Cassandra (or ScyllaDB) cluster.
+externalCassandra:
+  # Set this to true if you have a Cassandra instance outside the
+  # confines of this Helm chart that you want to use for TheHive data
+  # storage.
+  enabled: false
+  # Provide a hostname to which to connect.
+  hostName: ""
+  cluster:
+    # Set to the cluster name.
+    name: thp
+  # Details about the user as whom to authenticate to the database.
+  dbUser:
+    # Username to use when connecting.
+    name: cassandra
+    # Set to true to use a password when connecting.
+    forcePassword: false
+    # This password will be stored in a Kubernetes Secret.
+    password: ""
 
 # Provide extra pieces of TheHive configuration in this map. Keys will
 # be used as filenames; values as the contents of the respective

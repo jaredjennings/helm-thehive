@@ -116,7 +116,7 @@ play.ws
 
 {{- define "thehive.wsCACertPlayWSConfig" -}}
 {{- if (or .Values.trustRootCerts .Values.trustRootCertsInSecrets) }}
-{{ include "thehive.wsConfigRoot" }}.ssl.trustManager.stores = [
+{{ include "thehive.wsConfigRoot" . }}.ssl.trustManager.stores = [
 {{- include "thehive.wsCACertFilenamesPlayWSStoreLines" . | nindent 2 }}
 ]
 {{- end }}

@@ -28,7 +28,7 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "thehive.attachmentPVCName" . }}
         {{- end }}
-        {{- if and (not .Values.cassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
+        {{- if and (not .Values.cassandra.enabled) (not .Values.externalCassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
         - name: local-database
           persistentVolumeClaim:
             claimName: {{ include "thehive.localDatabasePVCName" . }}
@@ -112,6 +112,19 @@ spec:
                 secretKeyRef:
                   name: {{ include "thehive.cassandra.secretname" . | quote }}
                   key: "cassandra-password"
+            {{- else if .Values.externalCassandra.enabled }}
+            - name: CQL_USERNAME
+              value: {{ .Values.externalCassandra.dbUser.user | default "cassandra" | quote }}
+            {{- if .Values.externalCassandra.dbUser.forcePassword }}
+            - name: CQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "thehive.externalCassandra.secretname" . | quote }}
+                  key: "cassandra-password"
+            {{- else }}
+            - name: CQL_PASSWORD
+              value: ""
+            {{- end }}
             {{- end }}
             {{- end }}
           command:
@@ -131,7 +144,7 @@ spec:
                          sed "s/@@ES_PASSWORD@@/$ES_PASSWORD/g" | \
                          {{- end }}
                          {{- if not (hasPrefix "3." .Values.image.tag) }}
-                         {{- if .Values.cassandra.enabled }}
+                         {{- if (or .Values.cassandra.enabled .Values.externalCassandra.enabled) }}
                          sed "s/@@CQL_USERNAME@@/$CQL_USERNAME/g" | \
                          sed "s/@@CQL_PASSWORD@@/$CQL_PASSWORD/g" | \
                          {{- end }}
@@ -206,7 +219,7 @@ spec:
             - mountPath: /data/files
               name: attachment-storage
             {{- end }}
-            {{- if and (not .Values.cassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
+            {{- if and (not .Values.cassandra.enabled) (not .Values.externalCassandra.enabled) .Values.localDatabaseStorage.pvc.enabled }}
             - mountPath: /data/db
               name: local-database
             {{- end }}

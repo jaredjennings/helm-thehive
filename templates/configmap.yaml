@@ -73,6 +73,17 @@ data:
               cluster-name: {{ .Values.cassandra.cluster.name }}
               keyspace: thehive
             }
+          {{- else if .Values.externalCassandra.hostName }}
+            backend: cql
+            hostname: [ {{ .Values.externalCassandra.hostName | quote }} ]
+            username: "@@CQL_USERNAME@@"
+            {{- if .Values.externalCassandra.dbUser.forcePassword }}
+            password: "@@CQL_PASSWORD@@"
+            {{- end }}
+            cql {
+              cluster-name: {{ .Values.externalCassandra.cluster.name }}
+              keyspace: thehive
+            }
           {{- else if .Values.localDatabaseStorage.pvc.enabled }}
             backend = berkeleyje
             directory = "/data/db"
