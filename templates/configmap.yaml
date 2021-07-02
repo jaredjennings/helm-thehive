@@ -77,9 +77,8 @@ data:
             backend: cql
             hostname: [ {{ .Values.externalCassandra.hostName | quote }} ]
             username: "@@CQL_USERNAME@@"
-            {{- if .Values.externalCassandra.dbUser.forcePassword }}
+            {{-/* janusgraph expects you to give a password, even if cassandra may not */-}}
             password: "@@CQL_PASSWORD@@"
-            {{- end }}
             cql {
               cluster-name: {{ .Values.externalCassandra.cluster.name }}
               keyspace: thehive
