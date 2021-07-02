@@ -217,9 +217,8 @@ externalCassandra:
   dbUser:
     # Username to use when connecting.
     name: cassandra
-    # Set to true to use a password when connecting.
-    forcePassword: false
-    # This password will be stored in a Kubernetes Secret.
+    # This password will be stored in a Kubernetes Secret. It must be
+    # nonempty, even if Cassandra isn't configured to require one.
     password: ""
 
 # Provide extra pieces of TheHive configuration in this map. Keys will

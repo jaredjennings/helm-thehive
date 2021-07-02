@@ -115,16 +115,11 @@ spec:
             {{- else if .Values.externalCassandra.enabled }}
             - name: CQL_USERNAME
               value: {{ .Values.externalCassandra.dbUser.user | default "cassandra" | quote }}
-            {{- if .Values.externalCassandra.dbUser.forcePassword }}
             - name: CQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "thehive.externalCassandra.secretname" . | quote }}
                   key: "cassandra-password"
-            {{- else }}
-            - name: CQL_PASSWORD
-              value: ""
-            {{- end }}
             {{- end }}
             {{- end }}
           command:

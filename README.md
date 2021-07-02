@@ -204,14 +204,13 @@ deployment.
 Parameters to connect to an existing database that implements the CQL
 protocol.
 
-| Parameter                              | Description                                                    | Default   |
-| --                                     | --                                                             | --        |
-| externalCassandra.enabled              | Set this to true to connect to an existing Cassandra instance. | false     |
-| externalCassandra.hostName             | Hostname to use when connecting to the database.               |           |
-| externalCassandra.cluster.name         | Name of the Cassandra cluster.                                 | thp       |
-| externalCassandra.dbUser.name          | Username to use when connecting to the database.               | cassandra |
-| externalCassandra.dbUser.forcePassword | Set to true to use a password when connecting.                 | false     |
-| externalCassandra.dbUser.password      | Password to use when connecting. Will be stored in a Secret.   |           |
+| Parameter                         | Description                                                                                                                  | Default   |
+| --                                | --                                                                                                                           | --        |
+| externalCassandra.enabled         | Set this to true to connect to an existing Cassandra instance.                                                               | false     |
+| externalCassandra.hostName        | Hostname to use when connecting to the database.                                                                             |           |
+| externalCassandra.cluster.name    | Name of the Cassandra cluster.                                                                                               | thp       |
+| externalCassandra.dbUser.name     | Username to use when connecting to the database.                                                                             | cassandra |
+| externalCassandra.dbUser.password | Password to use when connecting. Must be nonempty, even if Cassandra doesn't require a password. Will be stored in a Secret. |           |
 
 ## Extra TheHive configurations
 
