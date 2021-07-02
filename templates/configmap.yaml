@@ -77,7 +77,7 @@ data:
             backend: cql
             hostname: [ {{ .Values.externalCassandra.hostName | quote }} ]
             username: "@@CQL_USERNAME@@"
-            {{-/* janusgraph expects you to give a password, even if cassandra may not */-}}
+            {{- /* janusgraph expects you to give a password, even if cassandra may not */}}
             password: "@@CQL_PASSWORD@@"
             cql {
               cluster-name: {{ .Values.externalCassandra.cluster.name }}
