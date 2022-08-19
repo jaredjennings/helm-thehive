@@ -2,7 +2,7 @@ apiVersion: v2
 name: thehive
 description: "TheHive: security incident response for the masses. This chart is unofficial."
 type: application
-version: 1.0.1
+version: 1.0.2
 appVersion: "4.1.23-1"
 # This is for the networking.k8s.io/v1 API used by the Ingress. see #10
 kubeVersion: '>=1.19.0'
@@ -14,6 +14,6 @@ maintainers:
 icon: http://thehive-project.org/assets/img/logos/thehive.svg
 dependencies:
   - name: cassandra
-    version: ~7.5.0
+    version: ~9.2.8
     repository: https://charts.bitnami.com/bitnami
     condition: cassandra.enabled
