@@ -112,10 +112,25 @@ Create the name of the service account to use
 {{ printf "%s-etc-th-tmpl" (include "thehive.fullname" .) }}
 {{- end }}
 
+{{- define "thehive.path" -}}
+{{- $x := "nossing" -}}
+{{- if .Values.ingress.path -}}
+{{- $x = .Values.ingress.path -}}
+{{- else -}}
+{{- $x = (index (index .Values.ingress.hosts 0).paths 0).path -}}
+{{- end -}}
+{{- if (gt (len $x) 1) -}}
+{{- /* length 1 is probably "/"; longer is probably "/foo"; append slash */ -}}
+{{- printf "%s/" $x -}}
+{{- else -}}
+{{- $x -}}
+{{- end -}}
+{{- end }}
+
 {{- define "thehive.statusRelativeURL" -}}
 {{- if hasPrefix "3." .Values.image.tag -}}
-/api/status
+{{ printf "%s%s" (include "thehive.path" .) "api/status" }}
 {{- else -}}
-/api/v1/status
+{{ printf "%s%s" (include "thehive.path" .) "api/v1/status" }}
 {{- end -}}
 {{- end }}

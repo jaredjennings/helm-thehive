@@ -189,7 +189,7 @@ spec:
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: {{ include "thehive.path" . | quote }}
               port: http
           # there is a sleep 30 to wait for cassandra to come up.
           # avoid getting killed for not being live. (for thehive3
