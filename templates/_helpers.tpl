@@ -113,12 +113,15 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "thehive.path" -}}
-{{- $x := "nossing" -}}
 {{- if .Values.ingress.path -}}
-{{- $x = .Values.ingress.path -}}
+{{- .Values.ingress.path -}}
 {{- else -}}
-{{- $x = (index (index .Values.ingress.hosts 0).paths 0).path -}}
+{{- (index (index .Values.ingress.hosts 0).paths 0).path -}}
 {{- end -}}
+{{- end }}
+
+{{- define "thehive.pathWithTrailingSlash" -}}
+{{- $x := (include "thehive.path" .) -}}
 {{- if (gt (len $x) 1) -}}
 {{- /* length 1 is probably "/"; longer is probably "/foo"; append slash */ -}}
 {{- printf "%s/" $x -}}
@@ -129,8 +132,16 @@ Create the name of the service account to use
 
 {{- define "thehive.statusRelativeURL" -}}
 {{- if hasPrefix "3." .Values.image.tag -}}
-{{ printf "%s%s" (include "thehive.path" .) "api/status" }}
+{{ printf "%s%s" (include "thehive.pathWithTrailingSlash" .) "api/status" }}
 {{- else -}}
-{{ printf "%s%s" (include "thehive.path" .) "api/v1/status" }}
+{{ printf "%s%s" (include "thehive.pathWithTrailingSlash" .) "api/v1/status" }}
 {{- end -}}
 {{- end }}
+
+{{- define "thehive.playHttpContextConfig" -}}
+{{- $p := (include "thehive.path" .) -}}
+{{- if (gt (len $p) 1) -}}
+play.http.context: {{ $p | quote }}
+{{- /* if $p is one character long, that character is "/" and we don't need to configure anything */ -}}
+{{- end -}}
+{{- end -}}

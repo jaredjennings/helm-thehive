@@ -17,6 +17,7 @@ data:
   main.conf.tmpl: |
     play.http.secret.key = "@@PLAY_HTTP_SECRET_KEY@@"
     {{- include "thehive.wsCACertPlayWSConfig" . | nindent 4 }}
+    {{- include "thehive.playHttpContextConfig" . | nindent 4 }}
     {{- range $k, $v := .Values.extraHiveConfigurations }}
     include file("/etc/thehive/extra/{{ $k }}")
     {{- end }}
