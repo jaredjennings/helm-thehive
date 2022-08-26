@@ -13,6 +13,9 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  {{- if .Values.ingress.class }}
+  ingressClassName: {{ .Values.ingress.class | quote }}
+  {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
     {{- range .Values.ingress.tls }}
@@ -23,6 +26,18 @@ spec:
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}
+  {{- if .Values.ingress.path }}
+  rules:
+    - http:
+        paths:
+          - path: {{ .Values.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+  {{- else if .Values.ingress.hosts }}
   rules:
     {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}
@@ -38,4 +53,8 @@ spec:
                   number: {{ $svcPort }}
           {{- end }}
     {{- end }}
+
+  {{- else }}
+  {{- fail "You must specify a 'hosts' or 'path' in your ingress. If your needs are not fulfilled by these, you will need to set ingress.enabled to false and make an Ingress object manually." }}
   {{- end }}
+{{- end }}

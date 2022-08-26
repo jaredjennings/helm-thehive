@@ -212,6 +212,49 @@ protocol.
 | externalCassandra.dbUser.name     | Username to use when connecting to the database.                                                                             | cassandra |
 | externalCassandra.dbUser.password | Password to use when connecting. Must be nonempty, even if Cassandra doesn't require a password. Will be stored in a Secret. |           |
 
+## Ingress
+
+How people will be able to access your TheHive instance, and which
+server certificates should be presented to them when they
+do. [Kubernetes Ingress
+documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/). You
+can specify a hostname or a path. Since the `hosts` value has multiple
+levels reminiscent of an Ingress spec, here's what it looks like to
+use it:
+
+```
+ingress:
+  hosts:
+    - host: hive.k.my.dns.domain
+      paths:
+       - path: /
+```
+
+The parts of the Ingress spec that specify where the traffic should
+land are filled in by this chart to point at the Hive instance it
+brings up.
+
+And here's an example of a `tls` value that says that when traffic
+summons this Ingress and it tells the client that it is
+`hive.k.my.dns.domain`, it should present the TLS certificate stored
+in `my-tls-secret`:
+
+```
+ingress:
+  tls:
+    - secretName: my-tls-secret
+      hosts:
+        - hive.k.my.dns.domain
+```
+
+| Parameter           | Description                                                                                                                                                                                                                          | Default                          |
+| ingress.enabled     | Set to true if this chart should create an Ingress object. If you need something custom, set this to false, and create your own Ingress.                                                                                             | true                             |
+| ingress.path        | Set to `/foo` to make TheHive available at https://your.host/foo - for example if your Kubernetes cluster doesn't have its own DNS subdomain. This does not specify a hostname; if you need to do that, use `ingress.hosts` instead. | --                               |
+| ingress.hosts       | Set to specify the hostname(s) clients will need to use. See example above.                                                                                                                                                          | some `thehive.example.com` stuff |
+| ingress.annotations | Specify any annotations necessary to get the right controller to pick up the Ingress. Deprecated.                                                                                                                                    | --                               |
+| ingress.class       | Set to the ingressClassName necessary to get the right ingress controller to pick up the Ingress.                                                                                                                                    | --                               |
+| ingress.tls         | Set to indicate which TLS secret to use for each hostname. See the example above and the Kubernetes Ingress documentation.                                                                                                           | []                               |
+
 ## Extra TheHive configurations
 
 You can provide extra configuration for TheHive, for example for
